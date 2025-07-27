@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CSV Image Matcher</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e1e2e 0%, #2d2d44 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #00d4ff, #7a5cff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 2.5em;
+            font-weight: bold;
+        }
+
+        .upload-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        @media (max-width: 600px) {
+            .upload-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .file-input-wrapper:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: #00d4ff;
+            transform: scale(1.02);
+        }
+
+        .file-input-wrapper.has-file {
+            border-color: #00ff88;
+            background: rgba(0, 255, 136, 0.1);
+        }
+
+        input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-label {
+            display: block;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-bottom: 10px;
+        }
+
+        .file-name {
+            font-size: 0.9em;
+            color: #00ff88;
+            word-break: break-all;
+        }
+
+        .button {
+            background: linear-gradient(135deg, #00d4ff, #7a5cff);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 30px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+
+        .button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0, 212, 255, 0.4);
+        }
+
+        .button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: gray;
+        }
+
+        .results {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .results.show {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .match-yes {
+            color: #00ff88;
+            font-weight: bold;
+        }
+
+        .match-no {
+            color: #ff4444;
+        }
+
+        .summary {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 212, 255, 0.1);
+            border-radius: 10px;
+            text-align: center;
+            font-size: 1.2em;
+        }
+
+        .download-btn {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+        }
+
+        .error {
+            color: #ff4444;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 68, 68, 0.1);
+            border-radius: 5px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 212, 255, 0.5);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(0, 212, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>CSV Image Matcher</h1>
+        
+        <div class="upload-section">
+            <div class="file-input-wrapper" id="customerWrapper">
+                <label for="customerFile" class="file-label">
+                    📄 Customer CSV File
+                    <input type="file" id="customerFile" accept=".csv" />
+                </label>
+                <div class="file-name" id="customerFileName"></div>
+            </div>
+            
+            <div class="file-input-wrapper" id="directoryWrapper">
+                <label for="directoryFile" class="file-label">
+                    📄 Chainguard Directory CSV File
+                    <input type="file" id="directoryFile" accept=".csv" />
+                </label>
+                <div class="file-name" id="directoryFileName"></div>
+            </div>
+        </div>
+        
+        <button class="button" id="processBtn" disabled>Process Files</button>
+        
+        <div class="error" id="errorMsg"></div>
+        
+        <div class="results" id="results">
+            <h2>Matching Results</h2>
+            <table id="resultsTable">
+                <thead>
+                    <tr>
+                        <th>Customer Image</th>
+                        <th>Chainguard Image</th>
+                        <th>Match</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsBody"></tbody>
+            </table>
+            <div class="summary" id="summary"></div>
+            <button class="button download-btn" id="downloadBtn">Download Results CSV</button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script>
+
+        // State variables
+        let customerData = null;
+        let directoryData = null;
+        let resultsData = [];
+
+        // DOM elements
+        const customerFileInput = document.getElementById('customerFile');
+        const directoryFileInput = document.getElementById('directoryFile');
+        const customerWrapper = document.getElementById('customerWrapper');
+        const directoryWrapper = document.getElementById('directoryWrapper');
+        const customerFileName = document.getElementById('customerFileName');
+        const directoryFileName = document.getElementById('directoryFileName');
+        const processBtn = document.getElementById('processBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const resultsDiv = document.getElementById('results');
+        const resultsBody = document.getElementById('resultsBody');
+        const summary = document.getElementById('summary');
+        const errorMsg = document.getElementById('errorMsg');
+
+        // File input handlers
+        customerFileInput.addEventListener('change', handleCustomerFile);
+        directoryFileInput.addEventListener('change', handleDirectoryFile);
+        processBtn.addEventListener('click', processFiles);
+        downloadBtn.addEventListener('click', downloadCSV);
+
+        // Wrapper click handlers for better UX
+        customerWrapper.addEventListener('click', () => customerFileInput.click());
+        directoryWrapper.addEventListener('click', () => directoryFileInput.click());
+
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.add('show');
+            setTimeout(() => errorMsg.classList.remove('show'), 5000);
+        }
+
+        function handleCustomerFile(e) {
+            e.stopPropagation();
+            const file = e.target.files[0];
+            if (file) {
+                customerFileName.textContent = file.name;
+                customerWrapper.classList.add('has-file');
+                parseCSV(file, (data) => {
+                    customerData = data;
+                    checkReadyToProcess();
+                });
+            }
+        }
+
+        function handleDirectoryFile(e) {
+            e.stopPropagation();
+            const file = e.target.files[0];
+            if (file) {
+                directoryFileName.textContent = file.name;
+                directoryWrapper.classList.add('has-file');
+                parseCSV(file, (data) => {
+                    directoryData = data;
+                    checkReadyToProcess();
+                });
+            }
+        }
+
+        function parseCSV(file, callback) {
+            Papa.parse(file, {
+                header: true,
+                dynamicTyping: true,
+                skipEmptyLines: true,
+                delimiter: ",",
+                complete: function(results) {
+                    if (results.errors && results.errors.length > 0) {
+                        console.warn('CSV parsing warnings:', results.errors);
+                        // Continue processing even with warnings
+                    }
+                    callback(results.data);
+                },
+                error: function(error) {
+                    showError('Error reading file: ' + error);
+                }
+            });
+        }
+
+        function checkReadyToProcess() {
+            processBtn.disabled = !(customerData && directoryData);
+        }
+
+        function processFiles() {
+            resultsData = [];
+            resultsBody.innerHTML = '';
+            
+            // Find the image name column in customer data
+            let imageColumn = null;
+            if (customerData.length > 0) {
+                const firstRow = customerData[0];
+                // Look for column containing 'image' (case insensitive)
+                for (const col in firstRow) {
+                    if (col.toLowerCase().includes('image')) {
+                        imageColumn = col;
+                        break;
+                    }
+                }
+                
+                if (!imageColumn) {
+                    showError('Could not find image column in customer CSV');
+                    return;
+                }
+            }
+
+            // Create a Set of directory names for fast lookup
+            const directoryNames = new Set(directoryData.map(row => row.name || row.Name));
+
+            let matchCount = 0;
+            const processedImages = new Set();
+
+            // Process each customer image
+            customerData.forEach(row => {
+                const customerImage = row[imageColumn];
+                if (!customerImage || processedImages.has(customerImage)) return;
+                
+                processedImages.add(customerImage);
+                
+                const hasMatch = directoryNames.has(customerImage);
+                const matchResult = {
+                    customerImage: customerImage,
+                    chainguardImage: hasMatch ? customerImage : '',
+                    match: hasMatch ? 'Y' : 'N'
+                };
+                
+                if (hasMatch) matchCount++;
+                resultsData.push(matchResult);
+                
+                // Add to table
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${customerImage}</td>
+                    <td>${matchResult.chainguardImage}</td>
+                    <td class="${hasMatch ? 'match-yes' : 'match-no'}">${matchResult.match}</td>
+                `;
+                resultsBody.appendChild(tr);
+            });
+
+            // Calculate and show summary
+            const percentage = processedImages.size > 0 
+                ? ((matchCount / processedImages.size) * 100).toFixed(1)
+                : 0;
+            
+            summary.innerHTML = `
+                <strong>Match Summary:</strong> ${matchCount} of ${processedImages.size} images matched (${percentage}%)
+            `;
+            
+            resultsDiv.classList.add('show');
+        }
+
+        function downloadCSV() {
+            try {
+                // Create CSV content manually for better control
+                let csvContent = 'Customer Image,Chainguard Image,Match\n';
+                
+                // Add data rows
+                resultsData.forEach(row => {
+                    // Escape any commas or quotes in the data
+                    const customerImage = row.customerImage.includes(',') || row.customerImage.includes('"') 
+                        ? `"${row.customerImage.replace(/"/g, '""')}"` 
+                        : row.customerImage;
+                    const chainguardImage = row.chainguardImage.includes(',') || row.chainguardImage.includes('"') 
+                        ? `"${row.chainguardImage.replace(/"/g, '""')}"` 
+                        : row.chainguardImage;
+                    
+                    csvContent += `${customerImage},${chainguardImage},${row.match}\n`;
+                });
+                
+                // Add summary row
+                const matchCount = resultsData.filter(row => row.match === 'Y').length;
+                const percentage = resultsData.length > 0 
+                    ? ((matchCount / resultsData.length) * 100).toFixed(1)
+                    : 0;
+                
+                csvContent += `SUMMARY,,${percentage}%\n`;
+
+                // Create and download the file
+                const blob = new Blob([csvContent], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = url;
+                a.download = 'image_matching_results.csv';
+                
+                document.body.appendChild(a);
+                a.click();
+                
+                // Cleanup
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                showError('Failed to download CSV file');
+            }
+        }
+    </script>
+</body>
+</html>
