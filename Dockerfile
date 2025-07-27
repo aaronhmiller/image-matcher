@@ -1,0 +1,16 @@
+# Use the official NGINX Alpine image as base
+# Alpine Linux is preferred for containers due to its minimal size (~5MB base)
+# and security-focused design
+FROM nginx:alpine
+
+# Copy the HTML file to the NGINX default serving directory
+COPY image-matcher-spa.html /usr/share/nginx/html/index.html
+
+# Copy custom NGINX configuration for better SPA handling
+COPY nginx.conf /etc/nginx/nginx.conf
+
+# Expose port 80 for HTTP traffic
+EXPOSE 80
+
+# Use NGINX's default CMD from the base image
+# This starts NGINX in the foreground, which is ideal for containers
