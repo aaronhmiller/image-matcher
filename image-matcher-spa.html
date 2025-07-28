@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CSV Image Matcher</title>
+    <title>Advanced CSV Image Matcher</title>
     <style>
         * {
             margin: 0;
@@ -27,7 +27,7 @@
             backdrop-filter: blur(10px);
             border-radius: 20px;
             padding: 40px;
-            max-width: 800px;
+            max-width: 1000px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -102,6 +102,102 @@
             word-break: break-all;
         }
 
+        .settings-section {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .settings-title {
+            margin-bottom: 20px;
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+
+        .algorithm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .algorithm-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .algorithm-item:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .algorithm-item label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.95em;
+        }
+
+        .algorithm-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .algorithm-description {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 5px;
+            margin-left: 28px;
+        }
+
+        .threshold-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .threshold-input {
+            flex: 1;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        .threshold-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00d4ff;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .threshold-input::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+
+        .threshold-value {
+            min-width: 60px;
+            text-align: center;
+            color: #00d4ff;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+
         .button {
             background: linear-gradient(135deg, #00d4ff, #7a5cff);
             color: white;
@@ -131,10 +227,10 @@
 
         .results {
             margin-top: 30px;
-            padding: 20px;
+            padding: 25px;
             background: rgba(255, 255, 255, 0.05);
             border-radius: 15px;
-            max-height: 400px;
+            max-height: 600px;
             overflow-y: auto;
             display: none;
         }
@@ -173,8 +269,18 @@
             background: rgba(255, 255, 255, 0.05);
         }
 
-        .match-yes {
+        .match-exact {
             color: #00ff88;
+            font-weight: bold;
+        }
+
+        .match-token {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+
+        .match-fuzzy {
+            color: #ffcc00;
             font-weight: bold;
         }
 
@@ -182,13 +288,49 @@
             color: #ff4444;
         }
 
+        .similarity-score {
+            font-size: 0.85em;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .algorithm-used {
+            font-size: 0.8em;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
         .summary {
-            margin-top: 20px;
-            padding: 15px;
+            margin-top: 25px;
+            padding: 20px;
             background: rgba(0, 212, 255, 0.1);
             border-radius: 10px;
+            font-size: 1.1em;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .summary-item {
             text-align: center;
-            font-size: 1.2em;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .summary-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #00d4ff;
+        }
+
+        .summary-label {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 5px;
         }
 
         .download-btn {
@@ -199,10 +341,11 @@
         .error {
             color: #ff4444;
             margin-top: 10px;
-            padding: 10px;
+            padding: 15px;
             background: rgba(255, 68, 68, 0.1);
-            border-radius: 5px;
+            border-radius: 8px;
             display: none;
+            border: 1px solid rgba(255, 68, 68, 0.3);
         }
 
         .error.show {
@@ -231,7 +374,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>CSV Image Matcher</h1>
+        <h1>Advanced CSV Image Matcher</h1>
         
         <div class="upload-section">
             <div class="file-input-wrapper" id="customerWrapper">
@@ -250,6 +393,49 @@
                 <div class="file-name" id="directoryFileName"></div>
             </div>
         </div>
+
+        <div class="settings-section">
+            <h3 class="settings-title">Matching Algorithms</h3>
+            <div class="algorithm-grid">
+                <div class="algorithm-item">
+                    <label>
+                        <input type="checkbox" id="tokenMatch" checked>
+                        <span>Token Matching</span>
+                    </label>
+                    <div class="algorithm-description">Matches word components (requires multiple tokens for multi-word names)</div>
+                </div>
+                
+                <div class="algorithm-item">
+                    <label>
+                        <input type="checkbox" id="levenshteinMatch" checked>
+                        <span>Levenshtein Distance</span>
+                    </label>
+                    <div class="algorithm-description">Character-level edit distance</div>
+                </div>
+                
+                <div class="algorithm-item">
+                    <label>
+                        <input type="checkbox" id="ngramMatch">
+                        <span>N-gram Similarity</span>
+                    </label>
+                    <div class="algorithm-description">Substring overlap analysis</div>
+                </div>
+                
+                <div class="algorithm-item">
+                    <label>
+                        <input type="checkbox" id="lcsMatch">
+                        <span>LCS Matching</span>
+                    </label>
+                    <div class="algorithm-description">Longest common subsequence</div>
+                </div>
+            </div>
+            
+            <div class="threshold-section">
+                <label for="thresholdInput">Similarity Threshold:</label>
+                <input type="range" id="thresholdInput" class="threshold-input" min="0.1" max="1.0" step="0.05" value="0.5">
+                <span class="threshold-value" id="thresholdValue">50%</span>
+            </div>
+        </div>
         
         <button class="button" id="processBtn" disabled>Process Files</button>
         
@@ -262,19 +448,219 @@
                     <tr>
                         <th>Customer Image</th>
                         <th>Chainguard Image</th>
-                        <th>Match</th>
+                        <th>Match Type</th>
+                        <th>Similarity</th>
+                        <th>Algorithm</th>
                     </tr>
                 </thead>
                 <tbody id="resultsBody"></tbody>
             </table>
-            <div class="summary" id="summary"></div>
+            <div class="summary" id="summary">
+                <strong>Match Summary</strong>
+                <div class="summary-grid" id="summaryGrid"></div>
+            </div>
             <button class="button download-btn" id="downloadBtn">Download Results CSV</button>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script>
+        // ===== MATCHING ALGORITHMS =====
+        
+        // Levenshtein distance algorithm
+        function levenshteinDistance(str1, str2) {
+            const m = str1.length;
+            const n = str2.length;
+            const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+            
+            for (let i = 0; i <= m; i++) dp[i][0] = i;
+            for (let j = 0; j <= n; j++) dp[0][j] = j;
+            
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (str1[i - 1] === str2[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1];
+                    } else {
+                        dp[i][j] = 1 + Math.min(
+                            dp[i - 1][j],
+                            dp[i][j - 1],
+                            dp[i - 1][j - 1]
+                        );
+                    }
+                }
+            }
+            
+            return dp[m][n];
+        }
 
+        function levenshteinSimilarity(str1, str2) {
+            const distance = levenshteinDistance(str1.toLowerCase(), str2.toLowerCase());
+            const maxLength = Math.max(str1.length, str2.length);
+            return maxLength === 0 ? 1 : 1 - (distance / maxLength);
+        }
+
+        // Token-based matching
+        function tokenSimilarity(str1, str2) {
+            const delimiters = /[-_\.]/;
+            const tokens1 = str1.toLowerCase().split(delimiters).filter(t => t.length > 0);
+            const tokens2 = str2.toLowerCase().split(delimiters).filter(t => t.length > 0);
+            
+            // If either has no tokens, fall back to simple substring check
+            if (tokens1.length === 0 || tokens2.length === 0) {
+                return str1.toLowerCase().includes(str2.toLowerCase()) || 
+                       str2.toLowerCase().includes(str1.toLowerCase()) ? 0.5 : 0;
+            }
+            
+            // Determine which is shorter and longer
+            const [shorter, longer, shorterTokens, longerTokens] = 
+                tokens1.length <= tokens2.length 
+                    ? [str1, str2, tokens1, tokens2] 
+                    : [str2, str1, tokens2, tokens1];
+            
+            let matchCount = 0;
+            const matchedTokens = [];
+            
+            for (const token of shorterTokens) {
+                if (longerTokens.includes(token)) {
+                    matchCount++;
+                    matchedTokens.push(token);
+                }
+            }
+            
+            // New logic: Require multiple token matches for multi-token strings
+            if (shorterTokens.length > 1) {
+                // For multi-token shorter strings, require at least 2 matches or 50% of tokens
+                const minRequired = Math.max(2, Math.ceil(shorterTokens.length * 0.5));
+                if (matchCount < minRequired) {
+                    // Not enough matches, but give partial credit
+                    return matchCount / shorterTokens.length * 0.5; // Max 0.5 for insufficient matches
+                }
+            } else if (shorterTokens.length === 1) {
+                // Single token in shorter string
+                if (longerTokens.length > 2) {
+                    // If the longer string has many tokens, a single match isn't very significant
+                    // Give lower score based on how many tokens are in the longer string
+                    const significance = 1 / Math.sqrt(longerTokens.length);
+                    return matchCount > 0 ? Math.min(0.5, significance) : 0;
+                }
+            }
+            
+            // Calculate final score with adjustments
+            const baseScore = matchCount / shorterTokens.length;
+            
+            // Bonus for consecutive token matches (indicates stronger relationship)
+            let consecutiveBonus = 0;
+            if (matchCount >= 2) {
+                // Check if matched tokens appear consecutively in the longer string
+                for (let i = 0; i < matchedTokens.length - 1; i++) {
+                    const idx1 = longerTokens.indexOf(matchedTokens[i]);
+                    const idx2 = longerTokens.indexOf(matchedTokens[i + 1]);
+                    if (Math.abs(idx1 - idx2) === 1) {
+                        consecutiveBonus += 0.1;
+                    }
+                }
+            }
+            
+            return Math.min(1.0, baseScore + consecutiveBonus);
+        }
+
+        // N-gram matching
+        function ngramSimilarity(str1, str2, n = 3) {
+            const s1 = str1.toLowerCase();
+            const s2 = str2.toLowerCase();
+            
+            if (s1.length < n || s2.length < n) {
+                // Fall back to substring check for short strings
+                return s1.includes(s2) || s2.includes(s1) ? 0.5 : 0;
+            }
+            
+            const ngrams1 = new Set();
+            const ngrams2 = new Set();
+            
+            for (let i = 0; i <= s1.length - n; i++) {
+                ngrams1.add(s1.substr(i, n));
+            }
+            
+            for (let i = 0; i <= s2.length - n; i++) {
+                ngrams2.add(s2.substr(i, n));
+            }
+            
+            const intersection = new Set([...ngrams1].filter(x => ngrams2.has(x)));
+            const union = new Set([...ngrams1, ...ngrams2]);
+            
+            return union.size > 0 ? intersection.size / union.size : 0;
+        }
+
+        // Longest Common Subsequence
+        function lcsLength(str1, str2) {
+            const m = str1.length;
+            const n = str2.length;
+            const dp = Array(m + 1).fill(null).map(() => Array(n + 1).fill(0));
+            
+            for (let i = 1; i <= m; i++) {
+                for (let j = 1; j <= n; j++) {
+                    if (str1[i - 1] === str2[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1] + 1;
+                    } else {
+                        dp[i][j] = Math.max(dp[i - 1][j], dp[i][j - 1]);
+                    }
+                }
+            }
+            
+            return dp[m][n];
+        }
+
+        function lcsSimilarity(str1, str2) {
+            const lcs = lcsLength(str1.toLowerCase(), str2.toLowerCase());
+            return (2 * lcs) / (str1.length + str2.length);
+        }
+
+        // Combined matching function
+        function findBestMatch(target, candidates, threshold, algorithms) {
+            let bestMatch = null;
+            let bestScore = 0;
+            let bestAlgorithm = '';
+            
+            for (const candidate of candidates) {
+                // First check for exact match
+                if (target === candidate) {
+                    return { match: candidate, score: 1.0, algorithm: 'Exact' };
+                }
+                
+                // Try each enabled algorithm
+                const scores = {};
+                
+                if (algorithms.token) {
+                    scores.Token = tokenSimilarity(target, candidate);
+                }
+                
+                if (algorithms.levenshtein) {
+                    scores.Levenshtein = levenshteinSimilarity(target, candidate);
+                }
+                
+                if (algorithms.ngram) {
+                    scores['N-gram'] = ngramSimilarity(target, candidate);
+                }
+                
+                if (algorithms.lcs) {
+                    scores.LCS = lcsSimilarity(target, candidate);
+                }
+                
+                // Find the best score among all algorithms
+                for (const [algo, score] of Object.entries(scores)) {
+                    if (score >= threshold && score > bestScore) {
+                        bestScore = score;
+                        bestMatch = candidate;
+                        bestAlgorithm = algo;
+                    }
+                }
+            }
+            
+            return bestMatch ? { match: bestMatch, score: bestScore, algorithm: bestAlgorithm } : null;
+        }
+
+        // ===== MAIN APPLICATION =====
+        
         // State variables
         let customerData = null;
         let directoryData = null;
@@ -291,18 +677,29 @@
         const downloadBtn = document.getElementById('downloadBtn');
         const resultsDiv = document.getElementById('results');
         const resultsBody = document.getElementById('resultsBody');
-        const summary = document.getElementById('summary');
+        const summaryGrid = document.getElementById('summaryGrid');
         const errorMsg = document.getElementById('errorMsg');
+        const thresholdInput = document.getElementById('thresholdInput');
+        const thresholdValue = document.getElementById('thresholdValue');
 
-        // File input handlers
+        // Algorithm checkboxes
+        const tokenCheck = document.getElementById('tokenMatch');
+        const levenshteinCheck = document.getElementById('levenshteinMatch');
+        const ngramCheck = document.getElementById('ngramMatch');
+        const lcsCheck = document.getElementById('lcsMatch');
+
+        // Event listeners
         customerFileInput.addEventListener('change', handleCustomerFile);
         directoryFileInput.addEventListener('change', handleDirectoryFile);
         processBtn.addEventListener('click', processFiles);
         downloadBtn.addEventListener('click', downloadCSV);
 
-        // Wrapper click handlers for better UX
         customerWrapper.addEventListener('click', () => customerFileInput.click());
         directoryWrapper.addEventListener('click', () => directoryFileInput.click());
+
+        thresholdInput.addEventListener('input', (e) => {
+            thresholdValue.textContent = Math.round(e.target.value * 100) + '%';
+        });
 
         function showError(message) {
             errorMsg.textContent = message;
@@ -345,7 +742,6 @@
                 complete: function(results) {
                     if (results.errors && results.errors.length > 0) {
                         console.warn('CSV parsing warnings:', results.errors);
-                        // Continue processing even with warnings
                     }
                     callback(results.data);
                 },
@@ -367,7 +763,6 @@
             let imageColumn = null;
             if (customerData.length > 0) {
                 const firstRow = customerData[0];
-                // Look for column containing 'image' (case insensitive)
                 for (const col in firstRow) {
                     if (col.toLowerCase().includes('image')) {
                         imageColumn = col;
@@ -381,10 +776,34 @@
                 }
             }
 
-            // Create a Set of directory names for fast lookup
-            const directoryNames = new Set(directoryData.map(row => row.name || row.Name));
+            // Get enabled algorithms
+            const algorithms = {
+                token: tokenCheck.checked,
+                levenshtein: levenshteinCheck.checked,
+                ngram: ngramCheck.checked,
+                lcs: lcsCheck.checked
+            };
 
-            let matchCount = 0;
+            // Check if at least one algorithm is enabled
+            if (!Object.values(algorithms).some(v => v)) {
+                showError('Please enable at least one matching algorithm');
+                return;
+            }
+
+            // Create arrays for directory names
+            const directoryNames = directoryData.map(row => row.name || row.Name).filter(name => name);
+            const threshold = parseFloat(thresholdInput.value);
+
+            // Track match types
+            const matchCounts = {
+                exact: 0,
+                token: 0,
+                levenshtein: 0,
+                ngram: 0,
+                lcs: 0,
+                none: 0
+            };
+
             const processedImages = new Set();
 
             // Process each customer image
@@ -394,33 +813,82 @@
                 
                 processedImages.add(customerImage);
                 
-                const hasMatch = directoryNames.has(customerImage);
-                const matchResult = {
-                    customerImage: customerImage,
-                    chainguardImage: hasMatch ? customerImage : '',
-                    match: hasMatch ? 'Y' : 'N'
-                };
+                // Find best match
+                const matchResult = findBestMatch(customerImage, directoryNames, threshold, algorithms);
                 
-                if (hasMatch) matchCount++;
-                resultsData.push(matchResult);
+                let resultRow;
+                if (matchResult) {
+                    const matchType = matchResult.algorithm === 'Exact' ? 'Exact' : 'Fuzzy';
+                    const algoKey = matchResult.algorithm.toLowerCase().replace('-', '');
+                    matchCounts[algoKey] = (matchCounts[algoKey] || 0) + 1;
+                    
+                    resultRow = {
+                        customerImage: customerImage,
+                        chainguardImage: matchResult.match,
+                        matchType: matchType,
+                        similarity: matchResult.score,
+                        algorithm: matchResult.algorithm
+                    };
+                } else {
+                    matchCounts.none++;
+                    resultRow = {
+                        customerImage: customerImage,
+                        chainguardImage: '',
+                        matchType: 'No Match',
+                        similarity: 0,
+                        algorithm: '-'
+                    };
+                }
+                
+                resultsData.push(resultRow);
                 
                 // Add to table
                 const tr = document.createElement('tr');
+                const matchClass = resultRow.algorithm === 'Exact' ? 'match-exact' :
+                                 resultRow.algorithm === 'Token' ? 'match-token' :
+                                 resultRow.matchType === 'Fuzzy' ? 'match-fuzzy' : 'match-no';
+                
                 tr.innerHTML = `
                     <td>${customerImage}</td>
-                    <td>${matchResult.chainguardImage}</td>
-                    <td class="${hasMatch ? 'match-yes' : 'match-no'}">${matchResult.match}</td>
+                    <td>${resultRow.chainguardImage}</td>
+                    <td class="${matchClass}">${resultRow.matchType}</td>
+                    <td class="similarity-score">${resultRow.similarity > 0 ? (resultRow.similarity * 100).toFixed(1) + '%' : '-'}</td>
+                    <td class="algorithm-used">${resultRow.algorithm}</td>
                 `;
                 resultsBody.appendChild(tr);
             });
 
-            // Calculate and show summary
+            // Update summary
+            const totalMatches = processedImages.size - matchCounts.none;
             const percentage = processedImages.size > 0 
-                ? ((matchCount / processedImages.size) * 100).toFixed(1)
+                ? ((totalMatches / processedImages.size) * 100).toFixed(1)
                 : 0;
-            
-            summary.innerHTML = `
-                <strong>Match Summary:</strong> ${matchCount} of ${processedImages.size} images matched (${percentage}%)
+
+            summaryGrid.innerHTML = `
+                <div class="summary-item">
+                    <div class="summary-value">${totalMatches}</div>
+                    <div class="summary-label">Total Matches</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${percentage}%</div>
+                    <div class="summary-label">Match Rate</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${matchCounts.exact}</div>
+                    <div class="summary-label">Exact</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${matchCounts.token}</div>
+                    <div class="summary-label">Token</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${matchCounts.levenshtein}</div>
+                    <div class="summary-label">Levenshtein</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-value">${matchCounts.none}</div>
+                    <div class="summary-label">No Match</div>
+                </div>
             `;
             
             resultsDiv.classList.add('show');
@@ -428,49 +896,97 @@
 
         function downloadCSV() {
             try {
-                // Create CSV content manually for better control
-                let csvContent = 'Customer Image,Chainguard Image,Match\n';
+                // Check if we have results
+                if (!resultsData || resultsData.length === 0) {
+                    showError('No results to download');
+                    return;
+                }
                 
-                // Add data rows
+                let csvContent = 'Customer Image,Chainguard Image,Match Type,Similarity,Algorithm\n';
+                
+                // Process each row with proper CSV escaping
                 resultsData.forEach(row => {
-                    // Escape any commas or quotes in the data
-                    const customerImage = row.customerImage.includes(',') || row.customerImage.includes('"') 
-                        ? `"${row.customerImage.replace(/"/g, '""')}"` 
-                        : row.customerImage;
-                    const chainguardImage = row.chainguardImage.includes(',') || row.chainguardImage.includes('"') 
-                        ? `"${row.chainguardImage.replace(/"/g, '""')}"` 
-                        : row.chainguardImage;
+                    const escapeCSV = (str) => {
+                        if (!str) return '';
+                        // Convert to string and check if escaping is needed
+                        str = String(str);
+                        if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+                            return '"' + str.replace(/"/g, '""') + '"';
+                        }
+                        return str;
+                    };
                     
-                    csvContent += `${customerImage},${chainguardImage},${row.match}\n`;
+                    const customerImage = escapeCSV(row.customerImage);
+                    const chainguardImage = escapeCSV(row.chainguardImage);
+                    const similarity = row.similarity > 0 ? (row.similarity * 100).toFixed(1) + '%' : '';
+                    
+                    csvContent += `${customerImage},${chainguardImage},${row.matchType},${similarity},${row.algorithm}\n`;
                 });
                 
-                // Add summary row
-                const matchCount = resultsData.filter(row => row.match === 'Y').length;
-                const percentage = resultsData.length > 0 
-                    ? ((matchCount / resultsData.length) * 100).toFixed(1)
-                    : 0;
+                // Add summary section
+                csvContent += '\n';
+                csvContent += 'SUMMARY\n';
+                csvContent += 'Metric,Value\n';
                 
-                csvContent += `SUMMARY,,${percentage}%\n`;
+                const totalMatches = resultsData.filter(row => row.matchType !== 'No Match').length;
+                const totalImages = resultsData.length;
+                const percentage = totalImages > 0 ? ((totalMatches / totalImages) * 100).toFixed(1) : 0;
+                
+                csvContent += `Total Images Processed,${totalImages}\n`;
+                csvContent += `Total Matches,${totalMatches}\n`;
+                csvContent += `Match Percentage,${percentage}%\n`;
+                
+                // Add breakdown by algorithm
+                csvContent += '\nMATCHES BY ALGORITHM\n';
+                csvContent += 'Algorithm,Count\n';
+                
+                const algoCounts = {};
+                resultsData.forEach(row => {
+                    if (row.algorithm && row.algorithm !== '-') {
+                        algoCounts[row.algorithm] = (algoCounts[row.algorithm] || 0) + 1;
+                    }
+                });
+                
+                // Sort by count descending
+                Object.entries(algoCounts)
+                    .sort((a, b) => b[1] - a[1])
+                    .forEach(([algo, count]) => {
+                        csvContent += `${algo},${count}\n`;
+                    });
+                
+                // No matches count
+                const noMatches = resultsData.filter(row => row.matchType === 'No Match').length;
+                csvContent += `No Match,${noMatches}\n`;
 
-                // Create and download the file
-                const blob = new Blob([csvContent], { type: 'text/csv' });
-                const url = window.URL.createObjectURL(blob);
+                // Create blob and download
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
                 
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = url;
-                a.download = 'image_matching_results.csv';
+                // Create download link
+                const link = document.createElement('a');
                 
-                document.body.appendChild(a);
-                a.click();
-                
-                // Cleanup
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
+                // Feature detection for download support
+                if (link.download !== undefined) {
+                    // Modern browsers
+                    const url = URL.createObjectURL(blob);
+                    link.setAttribute('href', url);
+                    link.setAttribute('download', 'image_matching_results.csv');
+                    link.style.visibility = 'hidden';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    
+                    // Clean up
+                    setTimeout(() => {
+                        URL.revokeObjectURL(url);
+                    }, 100);
+                } else {
+                    // Fallback for older browsers
+                    showError('Your browser does not support direct download. Please try a modern browser.');
+                }
                 
             } catch (error) {
                 console.error('Download error:', error);
-                showError('Failed to download CSV file');
+                showError('Failed to download CSV file. Error: ' + error.message);
             }
         }
     </script>
