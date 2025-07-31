@@ -698,16 +698,17 @@
                 }
             }
             
-            // Priority 9: Product-based matching (vendor-agnostic) - MORE RESTRICTIVE
+            // Priority 9: Product-based matching (vendor-agnostic) - HIGHLY RESTRICTIVE
             // Key products that should match regardless of vendor
+            // IMPORTANT: Only include actual product names, NOT vendor/org names like 'apache'
             const productTokens = [
                 'kafka', 'zookeeper', 'redis', 'mysql', 'postgres', 'postgresql', 
-                'mongodb', 'elasticsearch', 'nginx', 'apache', 'tomcat', 'rabbitmq',
+                'mongodb', 'elasticsearch', 'nginx', 'tomcat', 'rabbitmq',
                 'memcached', 'cassandra', 'jenkins', 'grafana', 'prometheus', 'consul',
-                'etcd', 'vault', 'terraform', 'ansible', 'wiremock'
+                'etcd', 'vault', 'terraform', 'ansible', 'wiremock', 'haproxy', 'mariadb'
             ];
             
-            // Find product matches with stricter criteria
+            // Find product matches with much stricter criteria
             for (let product of productTokens) {
                 let rawHasProduct = false;
                 let dirHasProduct = false;
@@ -739,17 +740,49 @@
                 
                 // Only match if it's a significant part of both names
                 if (rawHasProduct && dirHasProduct) {
-                    // Don't match if there are conflicting tokens (e.g., docker vs eck-operator)
-                    const hasConflict = rawTokens.some(rt => 
-                        rt !== product && dirTokens.some(dt => 
-                            dt !== product && rt !== dt && (rt.includes('operator') !== dt.includes('operator') ||
-                            rt.includes('cli') !== dt.includes('cli'))
-                        )
-                    );
+                    // CRITICAL: Ensure the full product context matches, not just a shared vendor
+                    // Extract core product names by removing common prefixes
+                    const vendorPrefixes = ['apache', 'amazon', 'aws', 'azure', 'google', 'microsoft', 
+                                          'elastic', 'hashicorp', 'confluent', 'bitnami', 'docker', 'ibm'];
                     
-                    if (!hasConflict) {
+                    let rawCore = rawOriginal;
+                    let dirCore = dirOriginal;
+                    
+                    // Remove vendor prefixes to get core product
+                    for (let vendor of vendorPrefixes) {
+                        rawCore = rawCore.replace(new RegExp(`^${vendor}[\\/-]`, 'i'), '');
+                        dirCore = dirCore.replace(new RegExp(`^${vendor}-`, 'i'), '');
+                    }
+                    
+                    // Check if the core products are actually related
+                    // For apache/kyuubi vs apache-activemq-artemis: kyuubi vs activemq-artemis
+                    const coreTokensRaw = rawCore.split(/[\\/-]/).filter(t => t.length > 2);
+                    const coreTokensDir = dirCore.split('-').filter(t => t.length > 2);
+                    
+                    // Must have at least one significant non-product token in common
+                    let hasSharedContext = false;
+                    for (let coreRaw of coreTokensRaw) {
+                        if (coreRaw !== product && coreRaw.length > 3) {
+                            for (let coreDir of coreTokensDir) {
+                                if (coreDir !== product && (coreDir === coreRaw || 
+                                    coreDir.includes(coreRaw) || coreRaw.includes(coreDir))) {
+                                    hasSharedContext = true;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Only give product match if there's shared context beyond the product name
+                    if (hasSharedContext) {
+                        return { score: 85, matchedTokens: [product + ' (product match with context)'] };
+                    }
+                    // If only the product matches but nothing else, it's a weak match
+                    else if (coreTokensRaw.length === 1 && coreTokensDir.length === 1) {
+                        // Both are just the product name (e.g., redis vs redis)
                         return { score: 85, matchedTokens: [product + ' (product match)'] };
                     }
+                    // Otherwise, don't match just based on shared product token
                 }
             }
             
@@ -978,7 +1011,7 @@
                 tbody.appendChild(row);
             });
             
-            // Update summary - CHANGED THIS PART
+            // Update summary
             document.getElementById('totalMatches').textContent = totalMatched;
             // Calculate percentage of matched entries out of total raw entries
             const percentageMatch = rawData.length > 0 ? 
