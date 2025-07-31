@@ -316,8 +316,8 @@
                         <div class="stat-label">Total Matches</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-value" id="avgScore">0%</div>
-                        <div class="stat-label">Average Score</div>
+                        <div class="stat-value" id="percentageMatch">0%</div>
+                        <div class="stat-label">Percentage Match</div>
                     </div>
                     <div class="stat">
                         <div class="stat-value" id="unmatchedCount">0</div>
@@ -538,10 +538,46 @@
                 return { score: 98, matchedTokens: [rawAsHyphenated + ' → ' + dirOriginal] };
             }
             
-            // Priority 3: Exact match with the last segment of the path (MOVED UP)
+            // Priority 2.5: Prevent matching when directory is a longer variant
+            // E.g., don't match "opentelemetry-operator" to "opentelemetry-operator-target-allocator"
+            const lastPathSegment = rawOriginal.split('/').pop();
+            if (dirOriginal.startsWith(lastPathSegment + '-') && lastPathSegment.length > 6) {
+                // Directory name is a longer, more specific variant
+                // Check if it's a known component extension
+                const extension = dirOriginal.substring(lastPathSegment.length + 1);
+                const componentExtensions = ['target-allocator', 'webhook', 'controller', 'manager', 
+                                           'agent', 'collector', 'exporter', 'receiver', 'processor', 'proxy'];
+                if (componentExtensions.includes(extension)) {
+                    return { score: 65, matchedTokens: [lastPathSegment + ' ⊂ ' + dirOriginal] };
+                }
+            }
+            
+            // Priority 3: Exact match with the last segment of the path
             const lastSegment = rawOriginal.split('/').pop();
             if (lastSegment === dirOriginal && lastSegment.length > 4) {
                 return { score: 97, matchedTokens: [dirOriginal + ' (exact segment)'] };
+            }
+            
+            // Priority 3.5: Prevent longer directory names from matching shorter raw names
+            // If directory name is longer and contains the raw segment, it's a worse match
+            if (dirOriginal.startsWith(lastSegment + '-') && lastSegment.length > 6) {
+                // The directory is a more specific variant (e.g., opentelemetry-operator-target-allocator)
+                // This should score lower than an exact match
+                return { score: 70, matchedTokens: [lastSegment + ' (partial of ' + dirOriginal + ')'] };
+            }
+            
+            // Priority 3.6: Check for exact match when removing common suffixes from raw
+            // This handles cases like "opentelemetry-operator-target-allocator" matching "opentelemetry-operator"
+            const commonSuffixes = ['-target-allocator', '-webhook', '-controller', '-manager', '-agent', 
+                                  '-collector', '-exporter', '-receiver', '-processor', '-proxy'];
+            for (let suffix of commonSuffixes) {
+                if (lastSegment.endsWith(suffix)) {
+                    const withoutSuffix = lastSegment.substring(0, lastSegment.length - suffix.length);
+                    if (withoutSuffix === dirOriginal && withoutSuffix.length > 6) {
+                        // This is a component of the main package, give it a lower score than exact match
+                        return { score: 85, matchedTokens: [dirOriginal + ' (base of ' + lastSegment + ')'] };
+                    }
+                }
             }
             
             // Priority 4: Check if directory name matches the end of the raw path (but not longer variants)
@@ -570,6 +606,28 @@
                     if (token === dirOriginal && token.length > 4 && 
                         !['controller', 'operator', 'agent', 'server', 'client', 'worker'].includes(token)) {
                         return { score: 91, matchedTokens: [token + ' (package name)'] };
+                    }
+                }
+            }
+            
+            // Priority 5.5: Exact operator/component matching
+            // Special handling for cases like opentelemetry-operator-target-allocator vs opentelemetry-operator
+            // Check if the directory name exactly matches the main component without suffixes
+            if (rawTokens.length > 0) {
+                // Check if raw has a hyphenated version that starts with the directory name
+                const rawHyphenated = rawTokens.join('-');
+                if (rawHyphenated.startsWith(dirOriginal + '-') && dirOriginal.length > 6) {
+                    // Check if this is a component/subcomponent relationship
+                    const suffix = rawHyphenated.substring(dirOriginal.length + 1);
+                    const componentSuffixes = ['target-allocator', 'webhook', 'controller', 'agent', 'proxy', 
+                                             'manager', 'collector', 'exporter', 'receiver', 'processor'];
+                    
+                    // If the suffix is a known component suffix, this is NOT as good a match
+                    // as an exact match would be
+                    for (let compSuffix of componentSuffixes) {
+                        if (suffix === compSuffix || suffix.startsWith(compSuffix + '-')) {
+                            return { score: 75, matchedTokens: [dirOriginal + ' (partial: ' + rawHyphenated + ')'] };
+                        }
                     }
                 }
             }
@@ -711,6 +769,15 @@
             let tokenMatchCount = 0;
             let semanticScore = 0;
             const significantTokens = [];
+            
+            // IMPORTANT: First check if we should skip this match entirely
+            // If the directory name is a longer variant of the raw's last segment, skip token matching
+            const rawLastSegment = rawOriginal.split('/').pop();
+            if (dirOriginal.startsWith(rawLastSegment + '-') && rawLastSegment === rawAsHyphenated) {
+                // This is a case like opentelemetry-operator vs opentelemetry-operator-target-allocator
+                // Don't do token matching as it will create false positives
+                return { score: 65, matchedTokens: [rawLastSegment + ' ⊂ ' + dirOriginal] };
+            }
             
             // Key tokens that indicate strong matches
             const keyTokens = ['snapshotter', 'provisioner', 'attacher', 'resizer', 'proxy', 'registrar', 
@@ -881,7 +948,6 @@
             tbody.innerHTML = '';
             
             let totalMatched = 0;
-            let totalScore = 0;
             
             matchResults.forEach(result => {
                 const row = document.createElement('tr');
@@ -891,7 +957,6 @@
                 
                 if (result.matchEntry !== 'No match above threshold') {
                     totalMatched++;
-                    totalScore += result.score;
                 }
                 
                 row.innerHTML = `
@@ -913,10 +978,12 @@
                 tbody.appendChild(row);
             });
             
-            // Update summary
+            // Update summary - CHANGED THIS PART
             document.getElementById('totalMatches').textContent = totalMatched;
-            document.getElementById('avgScore').textContent = totalMatched > 0 ? 
-                (totalScore / totalMatched).toFixed(1) + '%' : '0%';
+            // Calculate percentage of matched entries out of total raw entries
+            const percentageMatch = rawData.length > 0 ? 
+                ((totalMatched / rawData.length) * 100).toFixed(1) : '0';
+            document.getElementById('percentageMatch').textContent = percentageMatch + '%';
             document.getElementById('unmatchedCount').textContent = rawData.length - totalMatched;
             
             document.getElementById('loadingDiv').style.display = 'none';
