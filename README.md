@@ -1,4 +1,4 @@
-# Image Mapper App
+# Image Matcher App
 Check which container images Chainguard has matches for against the input file.
 ## Usage
 Either of the below options assume you have the following input files available:
