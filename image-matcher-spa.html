@@ -639,7 +639,12 @@
                 
                 // For each image, find best match in directory
                 imageData.forEach(imageRow => {
-                    const imageName = imageRow['image name'];
+                    const imageName = imageRow['image name'] || 
+                          imageRow['image_name] ||
+                          imageRow['Image Name'] || 
+                          imageRow['image names'] || 
+                          imageRow['Image Names'];
+                    
                     if (!imageName) return;
                     
                     let bestMatch = null;
