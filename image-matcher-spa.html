@@ -51,6 +51,26 @@
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
         }
+        
+		.octopus-mascot {
+			position: absolute;
+			top: 20px;
+			right: 20px;
+			width: 120px;
+			height: auto;
+			opacity: 0.9;
+			animation: float 3s ease-in-out infinite;
+			z-index: 10;
+		}
+		
+		@keyframes float {
+			0%, 100% {
+				transform: translateY(0px);
+			}
+			50% {
+				transform: translateY(-10px);
+			}
+		}        
 
         .subtitle {
             text-align: center;
@@ -350,6 +370,7 @@
 </head>
 <body>
     <div class="container">
+    <img src="images/transparent-background-awed-linky.png" alt="Linky mascot" class="octopus-mascot">
         <h1>Image Name Matcher</h1>
         <p class="subtitle">Match image names between two CSV files with configurable similarity threshold</p>
 
