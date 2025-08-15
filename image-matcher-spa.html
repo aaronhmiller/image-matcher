@@ -446,7 +446,7 @@
                     <table id="matches-table">
                         <thead>
                             <tr>
-                                <th>Image Name</th>
+                                <th>Image Name (Cleaned)</th>
                                 <th>Matched Directory Entry</th>
                                 <th>Similarity</th>
                             </tr>
@@ -664,13 +664,16 @@
                 
                 // For each image, find best match in directory
                 imageData.forEach(imageRow => {
-                    const imageName = imageRow['image name'] || 
+                    const originalImageName = imageRow['image name'] || 
                           imageRow['image_name'] ||
                           imageRow['Image Name'] || 
                           imageRow['image names'] || 
                           imageRow['Image Names'];
                     
-                    if (!imageName) return;
+                    if (!originalImageName) return;
+                    
+                    // Store the cleaned version for display
+                    const cleanedImageName = removeDomainPrefix(originalImageName);
                     
                     let bestMatch = null;
                     let bestSimilarity = 0;
@@ -680,11 +683,13 @@
                         if (!dirName) return;
                         
                         // Calculate similarity between image name and directory name
-                        const similarity = calculateSimilarity(imageName, dirName);
+                        const similarity = calculateSimilarity(originalImageName, dirName);
                         
                         if (similarity > bestSimilarity) {
                             bestMatch = {
-                                imageName: imageName,
+                                originalImageName: originalImageName,  // Store the full original name
+                                cleanedImageName: cleanedImageName,    // Store the cleaned name for display
+                                imageName: cleanedImageName,           // Keep for backward compatibility
                                 matchedName: dirName,
                                 similarity: similarity
                             };
@@ -723,7 +728,7 @@
                                        match.similarity >= 70 ? 'medium-similarity' : 'low-similarity';
                 
                 row.innerHTML = `
-                    <td>${match.imageName}</td>
+                    <td>${match.cleanedImageName}</td>
                     <td>${match.matchedName}</td>
                     <td>
                         <span class="similarity-badge ${similarityClass}">
@@ -740,7 +745,8 @@
 
         function downloadMatches() {
             const csv = Papa.unparse(matches.map(m => ({
-                'image_name': m.imageName,
+                'original_image_name': m.originalImageName,    // Full original name with domain
+                'cleaned_image_name': m.cleanedImageName,      // Cleaned name used for matching
                 'matched_name': m.matchedName,
                 'similarity_percentage': m.similarity.toFixed(1)
             })));
