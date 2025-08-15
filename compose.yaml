@@ -1,6 +1,8 @@
 services:
   csv-image-matcher:
-    build: .
+    build: 
+      context: .
+      dockerfile: Dockerfile
     container_name: csv-image-matcher
     ports:
       - "8080:80"
